@@ -27,6 +27,7 @@ type KeyStrokeEvents struct {
 	startTime      time.Time
 	duration       time.Duration
 	maxDisplaySize int
+	fontFamily     string
 }
 
 const (

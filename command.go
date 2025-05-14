@@ -273,26 +273,27 @@ func ExecutePaste(_ parser.Command, v *VHS) {
 
 // Settings maps the Set commands to their respective functions.
 var Settings = map[string]CommandFunc{
-	"FontFamily":    ExecuteSetFontFamily,
-	"FontSize":      ExecuteSetFontSize,
-	"Framerate":     ExecuteSetFramerate,
-	"Height":        ExecuteSetHeight,
-	"LetterSpacing": ExecuteSetLetterSpacing,
-	"LineHeight":    ExecuteSetLineHeight,
-	"PlaybackSpeed": ExecuteSetPlaybackSpeed,
-	"Padding":       ExecuteSetPadding,
-	"Theme":         ExecuteSetTheme,
-	"TypingSpeed":   ExecuteSetTypingSpeed,
-	"KeyStrokes":    ExecuteSetKeyStrokes,
-	"Width":         ExecuteSetWidth,
-	"Shell":         ExecuteSetShell,
-	"LoopOffset":    ExecuteLoopOffset,
-	"MarginFill":    ExecuteSetMarginFill,
-	"Margin":        ExecuteSetMargin,
-	"WindowBar":     ExecuteSetWindowBar,
-	"WindowBarSize": ExecuteSetWindowBarSize,
-	"BorderRadius":  ExecuteSetBorderRadius,
-	"CursorBlink":   ExecuteSetCursorBlink,
+	"FontFamily":           ExecuteSetFontFamily,
+	"FontSize":             ExecuteSetFontSize,
+	"Framerate":            ExecuteSetFramerate,
+	"Height":               ExecuteSetHeight,
+	"LetterSpacing":        ExecuteSetLetterSpacing,
+	"LineHeight":           ExecuteSetLineHeight,
+	"PlaybackSpeed":        ExecuteSetPlaybackSpeed,
+	"Padding":              ExecuteSetPadding,
+	"Theme":                ExecuteSetTheme,
+	"TypingSpeed":          ExecuteSetTypingSpeed,
+	"KeyStrokes":           ExecuteSetKeyStrokes,
+	"KeyStrokesFontFamily": ExecuteSetKeyStrokesFontFamily,
+	"Width":                ExecuteSetWidth,
+	"Shell":                ExecuteSetShell,
+	"LoopOffset":           ExecuteLoopOffset,
+	"MarginFill":           ExecuteSetMarginFill,
+	"Margin":               ExecuteSetMargin,
+	"WindowBar":            ExecuteSetWindowBar,
+	"WindowBarSize":        ExecuteSetWindowBarSize,
+	"BorderRadius":         ExecuteSetBorderRadius,
+	"CursorBlink":          ExecuteSetCursorBlink,
 }
 
 // ExecuteSet applies the settings on the running vhs specified by the
@@ -399,6 +400,10 @@ func ExecuteSetKeyStrokes(c parser.Command, v *VHS) {
 	default:
 		return
 	}
+}
+
+func ExecuteSetKeyStrokesFontFamily(c parser.Command, v *VHS) {
+	v.Page.KeyStrokeEvents.fontFamily = c.Args
 }
 
 // ExecuteSetPadding applies the padding on the vhs.
