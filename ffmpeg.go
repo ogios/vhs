@@ -36,7 +36,7 @@ func NewVideoFilterBuilder(videoOpts *VideoOptions) *FilterComplexBuilder {
 			videoOpts.PlaybackSpeed,
 
 			termWidth,
-			termHeight,
+			termHeight+videoOpts.Style.Padding,
 			videoOpts.Style.BackgroundColor,
 
 			videoOpts.Style.Padding,
@@ -162,7 +162,7 @@ func (fb *FilterComplexBuilder) WithMarginFill(marginStream int) *FilterComplexB
 			`,
 				marginStream,
 				fb.style.Width,
-				fb.style.Height,
+				fb.style.Height+fb.style.Padding,
 				fb.prevStageName,
 			),
 		)
@@ -206,6 +206,10 @@ func (fb *FilterComplexBuilder) WithKeyStrokes(opts VideoOptions) *FilterComplex
 	}
 
 	prevStageName := fb.prevStageName
+	fontFamily := opts.KeyStrokeOverlay.FontFamily
+	if fontFamily == "" {
+		fontFamily = defaultFontFamily
+	}
 	for i := range events {
 		event := events[i]
 		fb.filterComplex.WriteString(";")
@@ -223,7 +227,7 @@ func (fb *FilterComplexBuilder) WithKeyStrokes(opts VideoOptions) *FilterComplex
 			[%s]drawtext=font=%s:text='%s':fontcolor=%s:fontsize=%d:x='%s':y='%s':enable='%s'[%s]
 			`,
 				prevStageName,
-				defaultFontFamily,
+				fontFamily,
 				events[i].Display,
 				opts.KeyStrokeOverlay.Color,
 				defaultFontSize,

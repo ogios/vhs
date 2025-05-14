@@ -54,6 +54,7 @@ type KeyStrokeOptions struct {
 	Color       string
 	TypingSpeed time.Duration
 	Duration    time.Duration
+	FontFamily  string
 }
 
 // VideoOptions is the set of options for converting frames to a GIF.

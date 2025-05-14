@@ -219,6 +219,7 @@ func (vhs *VHS) Render() error {
 		return err
 	}
 
+	vhs.Options.Video.KeyStrokeOverlay.FontFamily = vhs.Page.KeyStrokeEvents.fontFamily
 	vhs.Options.Video.KeyStrokeOverlay.Events = vhs.Page.KeyStrokeEvents.events
 	vhs.Options.Video.KeyStrokeOverlay.Duration = vhs.Page.KeyStrokeEvents.duration
 
