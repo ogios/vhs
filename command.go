@@ -215,8 +215,6 @@ func ExecuteCtrl(c parser.Command, v *VHS) error {
 	return nil
 }
 
-// ExecuteAlt is a CommandFunc that presses the argument key with the alt key
-// held down on the running instance of vhs.
 func ExecuteAlt(c parser.Command, v *VHS) error {
 	err := v.Page.Keyboard.Press(input.AltLeft)
 	if err != nil {
@@ -410,27 +408,29 @@ func ExecutePaste(_ parser.Command, v *VHS) error {
 
 // Settings maps the Set commands to their respective functions.
 var Settings = map[string]CommandFunc{
-	"FontFamily":    ExecuteSetFontFamily,
-	"FontSize":      ExecuteSetFontSize,
-	"Framerate":     ExecuteSetFramerate,
-	"Height":        ExecuteSetHeight,
-	"LetterSpacing": ExecuteSetLetterSpacing,
-	"LineHeight":    ExecuteSetLineHeight,
-	"PlaybackSpeed": ExecuteSetPlaybackSpeed,
-	"Padding":       ExecuteSetPadding,
-	"Theme":         ExecuteSetTheme,
-	"TypingSpeed":   ExecuteSetTypingSpeed,
-	"Width":         ExecuteSetWidth,
-	"Shell":         ExecuteSetShell,
-	"LoopOffset":    ExecuteLoopOffset,
-	"MarginFill":    ExecuteSetMarginFill,
-	"Margin":        ExecuteSetMargin,
-	"WindowBar":     ExecuteSetWindowBar,
-	"WindowBarSize": ExecuteSetWindowBarSize,
-	"BorderRadius":  ExecuteSetBorderRadius,
-	"WaitPattern":   ExecuteSetWaitPattern,
-	"WaitTimeout":   ExecuteSetWaitTimeout,
-	"CursorBlink":   ExecuteSetCursorBlink,
+	"FontFamily":           ExecuteSetFontFamily,
+	"FontSize":             ExecuteSetFontSize,
+	"Framerate":            ExecuteSetFramerate,
+	"Height":               ExecuteSetHeight,
+	"LetterSpacing":        ExecuteSetLetterSpacing,
+	"LineHeight":           ExecuteSetLineHeight,
+	"PlaybackSpeed":        ExecuteSetPlaybackSpeed,
+	"Padding":              ExecuteSetPadding,
+	"Theme":                ExecuteSetTheme,
+	"TypingSpeed":          ExecuteSetTypingSpeed,
+	"KeyStrokes":           ExecuteSetKeyStrokes,
+	"KeyStrokesFontFamily": ExecuteSetKeyStrokesFontFamily,
+	"Width":                ExecuteSetWidth,
+	"Shell":                ExecuteSetShell,
+	"LoopOffset":           ExecuteLoopOffset,
+	"MarginFill":           ExecuteSetMarginFill,
+	"Margin":               ExecuteSetMargin,
+	"WindowBar":            ExecuteSetWindowBar,
+	"WindowBarSize":        ExecuteSetWindowBarSize,
+	"BorderRadius":         ExecuteSetBorderRadius,
+	"WaitPattern":          ExecuteSetWaitPattern,
+	"WaitTimeout":          ExecuteSetWaitTimeout,
+	"CursorBlink":          ExecuteSetCursorBlink,
 }
 
 // ExecuteSet applies the settings on the running vhs specified by the
@@ -566,6 +566,14 @@ func ExecuteSetTheme(c parser.Command, v *VHS) error {
 	v.Options.Video.Style.BackgroundColor = v.Options.Theme.Background
 	v.Options.Video.Style.WindowBarColor = v.Options.Theme.Background
 
+	// The intuitive behavior is to have keystroke overlay inherit from the
+	// foreground color. One key benefit of this behavior is that you won't have
+	// issues where e.g. a light theme makes a default white-value keystroke
+	// overlay be hard to read. If it does, then the theme is likely
+	// fundamentally 'broken' since the text you type at the shell will
+	// similarly be very hard to read.
+	v.Options.Video.KeyStrokeOverlay.Color = v.Options.Theme.Foreground
+
 	return nil
 }
 
@@ -577,6 +585,7 @@ func ExecuteSetTypingSpeed(c parser.Command, v *VHS) error {
 	}
 
 	v.Options.TypingSpeed = typingSpeed
+	v.Options.Video.KeyStrokeOverlay.TypingSpeed = typingSpeed
 	return nil
 }
 
@@ -597,6 +606,24 @@ func ExecuteSetWaitPattern(c parser.Command, v *VHS) error {
 		return fmt.Errorf("failed to compile regexp: %w", err)
 	}
 	v.Options.WaitPattern = rx
+	return nil
+}
+
+// ExecuteSetKeyStrokes enables or disables keystroke overlay recording.
+func ExecuteSetKeyStrokes(c parser.Command, v *VHS) error {
+	switch c.Args {
+	case "Hide":
+		v.Page.KeyStrokeEvents.Disable()
+	case "Show":
+		v.Page.KeyStrokeEvents.Enable()
+	default:
+		return fmt.Errorf("invalid argument for SetKeyStrokes: %s", c.Args)
+	}
+	return nil
+}
+
+func ExecuteSetKeyStrokesFontFamily(c parser.Command, v *VHS) error {
+	v.Page.KeyStrokeEvents.fontFamily = c.Args
 	return nil
 }
 
