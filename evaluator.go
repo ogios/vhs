@@ -151,6 +151,10 @@ func Evaluate(ctx context.Context, tape string, out io.Writer, opts ...Evaluator
 		//
 		// We should remove if isSetting statement.
 		isSetting := cmd.Type == token.SET && !isIntermediateAllowedSet(cmd.Options)
+
+		if isSetting {
+			fmt.Println(ErrorStyle.Render(fmt.Sprintf("WARN: 'Set %s %s' has been ignored. Move the directive to the top of the file.\nLearn more: https://github.com/charmbracelet/vhs#settings", cmd.Options, cmd.Args)))
+		}
 		if isSetting || cmd.Type == token.REQUIRE {
 			fmt.Fprintln(out, Highlight(cmd, true))
 			continue

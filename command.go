@@ -137,11 +137,12 @@ func ExecuteCtrl(c parser.Command, v *VHS) {
 	action.MustDo()
 }
 
-// ExecuteAlt is a CommandFunc that presses the argument key with the alt key
-// held down on the running instance of vhs.
-func ExecuteAlt(c parser.Command, v *VHS) {
-	v.Page.Keyboard.Press(input.AltLeft)
-	if k, ok := token.Keywords[c.Args]; ok {
+func ExecuteAlt(c parser.Command, v *VHS) error {
+	err := v.Page.Keyboard.Press(input.AltLeft)
+	if err != nil {
+		return fmt.Errorf("failed to press Alt key: %w", err)
+	}
+	if k, ok := token.Keywords[c.Args]; ok { //nolint:nestif
 		switch k {
 		case token.ENTER:
 			v.Page.Keyboard.Type(input.Enter)
@@ -293,6 +294,8 @@ var Settings = map[string]CommandFunc{
 	"WindowBar":            ExecuteSetWindowBar,
 	"WindowBarSize":        ExecuteSetWindowBarSize,
 	"BorderRadius":         ExecuteSetBorderRadius,
+	"WaitPattern":          ExecuteSetWaitPattern,
+	"WaitTimeout":          ExecuteSetWaitTimeout,
 	"CursorBlink":          ExecuteSetCursorBlink,
 }
 
@@ -371,6 +374,7 @@ func ExecuteSetTheme(c parser.Command, v *VHS) {
 	_, _ = v.Page.Eval(fmt.Sprintf("() => term.options.theme = %s", string(bts)))
 	v.Options.Video.Style.BackgroundColor = v.Options.Theme.Background
 	v.Options.Video.Style.WindowBarColor = v.Options.Theme.Background
+
 	// The intuitive behavior is to have keystroke overlay inherit from the
 	// foreground color. One key benefit of this behavior is that you won't have
 	// issues where e.g. a light theme makes a default white-value keystroke
@@ -378,6 +382,8 @@ func ExecuteSetTheme(c parser.Command, v *VHS) {
 	// fundamentally 'broken' since the text you type at the shell will
 	// similarly be very hard to read.
 	v.Options.Video.KeyStrokeOverlay.Color = v.Options.Theme.Foreground
+
+	return nil
 }
 
 // ExecuteSetTypingSpeed applies the default typing speed on the vhs.
@@ -388,6 +394,7 @@ func ExecuteSetTypingSpeed(c parser.Command, v *VHS) {
 	}
 	v.Options.TypingSpeed = typingSpeed
 	v.Options.Video.KeyStrokeOverlay.TypingSpeed = typingSpeed
+	return nil
 }
 
 // ExecuteSetKeyStrokes enables or disables keystroke overlay recording.
@@ -404,6 +411,24 @@ func ExecuteSetKeyStrokes(c parser.Command, v *VHS) {
 
 func ExecuteSetKeyStrokesFontFamily(c parser.Command, v *VHS) {
 	v.Page.KeyStrokeEvents.fontFamily = c.Args
+}
+
+// ExecuteSetKeyStrokes enables or disables keystroke overlay recording.
+func ExecuteSetKeyStrokes(c parser.Command, v *VHS) error {
+	switch c.Args {
+	case "Hide":
+		v.Page.KeyStrokeEvents.Disable()
+	case "Show":
+		v.Page.KeyStrokeEvents.Enable()
+	default:
+		return fmt.Errorf("invalid argument for SetKeyStrokes: %s", c.Args)
+	}
+	return nil
+}
+
+func ExecuteSetKeyStrokesFontFamily(c parser.Command, v *VHS) error {
+	v.Page.KeyStrokeEvents.fontFamily = c.Args
+	return nil
 }
 
 // ExecuteSetPadding applies the padding on the vhs.

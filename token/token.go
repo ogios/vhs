@@ -92,6 +92,9 @@ const (
 	WINDOW_BAR           = "WINDOW_BAR"      //nolint:revive
 	WINDOW_BAR_SIZE      = "WINDOW_BAR_SIZE" //nolint:revive
 	BORDER_RADIUS        = "CORNER_RADIUS"   //nolint:revive
+	WAIT                 = "WAIT"            //nolint:revive
+	WAIT_TIMEOUT         = "WAIT_TIMEOUT"    //nolint:revive
+	WAIT_PATTERN         = "WAIT_PATTERN"    //nolint:revive
 	CURSOR_BLINK         = "CURSOR_BLINK"    //nolint:revive
 )
 
@@ -117,8 +120,8 @@ var Keywords = map[string]Type{
 	"Left":                 LEFT,
 	"Right":                RIGHT,
 	"Up":                   UP,
-	"PageUp":               PAGEUP,
-	"PageDown":             PAGEDOWN,
+	"PageUp":               PAGE_UP,
+	"PageDown":             PAGE_DOWN,
 	"Tab":                  TAB,
 	"Escape":               ESCAPE,
 	"End":                  END,
@@ -146,6 +149,9 @@ var Keywords = map[string]Type{
 	"Theme":                THEME,
 	"Width":                WIDTH,
 	"LoopOffset":           LOOP_OFFSET,
+	"WaitTimeout":          WAIT_TIMEOUT,
+	"WaitPattern":          WAIT_PATTERN,
+	"Wait":                 WAIT,
 	"Source":               SOURCE,
 	"CursorBlink":          CURSOR_BLINK,
 	"true":                 BOOLEAN,

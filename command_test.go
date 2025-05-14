@@ -18,7 +18,7 @@ func TestCommand(t *testing.T) {
 		t.Errorf("Expected %d commands, got %d", numberOfCommandFuncs, len(CommandFuncs))
 	}
 
-	const numberOfSettings = 20
+	const numberOfSettings = 23
 	if len(Settings) != numberOfSettings {
 		t.Errorf("Expected %d settings, got %d", numberOfSettings, len(Settings))
 	}
