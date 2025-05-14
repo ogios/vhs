@@ -31,7 +31,7 @@ func (l *Lexer) readChar() {
 func (l *Lexer) NextToken() token.Token {
 	l.skipWhitespace()
 
-	var tok = token.Token{Line: l.line, Column: l.column}
+	tok := token.Token{Line: l.line, Column: l.column}
 
 	switch l.ch {
 	case 0:
@@ -42,8 +42,23 @@ func (l *Lexer) NextToken() token.Token {
 	case '=':
 		tok = l.newToken(token.EQUAL, l.ch)
 		l.readChar()
+	case ']':
+		tok = l.newToken(token.RIGHT_BRACKET, l.ch)
+		l.readChar()
+	case '[':
+		tok = l.newToken(token.LEFT_BRACKET, l.ch)
+		l.readChar()
+	case '-':
+		tok = l.newToken(token.MINUS, l.ch)
+		l.readChar()
 	case '%':
 		tok = l.newToken(token.PERCENT, l.ch)
+		l.readChar()
+	case '^':
+		tok = l.newToken(token.CARET, l.ch)
+		l.readChar()
+	case '\\':
+		tok = l.newToken(token.BACKSLASH, l.ch)
 		l.readChar()
 	case '#':
 		tok.Type = token.COMMENT
@@ -66,6 +81,10 @@ func (l *Lexer) NextToken() token.Token {
 	case '"':
 		tok.Type = token.STRING
 		tok.Literal = l.readString('"')
+		l.readChar()
+	case '/':
+		tok.Type = token.REGEX
+		tok.Literal = l.readString('/')
 		l.readChar()
 	default:
 		if isDigit(l.ch) || (isDot(l.ch) && isDigit(l.peekChar())) {

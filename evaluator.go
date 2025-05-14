@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/vhs/lexer"
 	"github.com/charmbracelet/vhs/parser"
 	"github.com/charmbracelet/vhs/token"
+	"github.com/go-rod/rod"
 )
 
 // EvaluatorOption is a function that can be used to modify the VHS instance.
@@ -46,7 +47,10 @@ func Evaluate(ctx context.Context, tape string, out io.Writer, opts ...Evaluator
 	v := New()
 	for _, cmd := range cmds {
 		if cmd.Type == token.SET && cmd.Options == "Shell" || cmd.Type == token.ENV {
-			Execute(cmd, &v)
+			err := Execute(cmd, &v)
+			if err != nil {
+				return []error{err}
+			}
 		}
 	}
 
@@ -56,13 +60,23 @@ func Evaluate(ctx context.Context, tape string, out io.Writer, opts ...Evaluator
 	}
 	defer func() { _ = v.close() }()
 
-	// Run Output and Set commands as they only modify options on the VHS instance.
+	// Let's wait until we can access the window.term variable.
+	//
+	// This is necessary because some SET commands modify the terminal.
+	err := v.Page.Wait(rod.Eval("() => window.term != undefined"))
+	if err != nil {
+		return []error{err}
+	}
+
 	var offset int
 	for i, cmd := range cmds {
 		if cmd.Type == token.SET || cmd.Type == token.OUTPUT || cmd.Type == token.REQUIRE {
-			fmt.Fprintln(out, Highlight(cmd, false))
+			_, _ = fmt.Fprintln(out, Highlight(cmd, false))
 			if cmd.Options != "Shell" {
-				Execute(cmd, &v)
+				err := Execute(cmd, &v)
+				if err != nil {
+					return []error{err}
+				}
 			}
 		} else {
 			offset = i
@@ -103,8 +117,11 @@ func Evaluate(ctx context.Context, tape string, out io.Writer, opts ...Evaluator
 				offset += i
 				break
 			}
-			fmt.Fprintln(out, Highlight(cmd, true))
-			Execute(cmd, &v)
+			_, _ = fmt.Fprintln(out, Highlight(cmd, true))
+			err := Execute(cmd, &v)
+			if err != nil {
+				return []error{err}
+			}
 		}
 	}
 
@@ -151,12 +168,20 @@ func Evaluate(ctx context.Context, tape string, out io.Writer, opts ...Evaluator
 		//
 		// We should remove if isSetting statement.
 		isSetting := cmd.Type == token.SET && !isIntermediateAllowedSet(cmd.Options)
+
+		if isSetting {
+			fmt.Println(ErrorStyle.Render(fmt.Sprintf("WARN: 'Set %s %s' has been ignored. Move the directive to the top of the file.\nLearn more: https://github.com/charmbracelet/vhs#settings", cmd.Options, cmd.Args)))
+		}
 		if isSetting || cmd.Type == token.REQUIRE {
-			fmt.Fprintln(out, Highlight(cmd, true))
+			_, _ = fmt.Fprintln(out, Highlight(cmd, true))
 			continue
 		}
-		fmt.Fprintln(out, Highlight(cmd, !v.recording || cmd.Type == token.SHOW || cmd.Type == token.HIDE || isSetting))
-		Execute(cmd, &v)
+		_, _ = fmt.Fprintln(out, Highlight(cmd, !v.recording || cmd.Type == token.SHOW || cmd.Type == token.HIDE || isSetting))
+		err := Execute(cmd, &v)
+		if err != nil {
+			teardown()
+			return []error{err}
+		}
 	}
 
 	// If running as an SSH server, the output file is a temporary file

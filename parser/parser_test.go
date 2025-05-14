@@ -12,6 +12,8 @@ import (
 func TestParser(t *testing.T) {
 	input := `
 Set TypingSpeed 100ms
+Set WaitTimeout 1m
+Set WaitPattern /foo/
 Type "echo 'Hello, World!'"
 Enter
 Backspace@0.1 5
@@ -28,10 +30,15 @@ Ctrl+C
 Ctrl+L
 Alt+.
 Sleep 100ms
-Sleep 3`
+Sleep 3
+Wait
+Wait+Screen
+Wait@100ms /foobar/`
 
 	expected := []Command{
 		{Type: token.SET, Options: "TypingSpeed", Args: "100ms"},
+		{Type: token.SET, Options: "WaitTimeout", Args: "1m"},
+		{Type: token.SET, Options: "WaitPattern", Args: "foo"},
 		{Type: token.TYPE, Options: "", Args: "echo 'Hello, World!'"},
 		{Type: token.ENTER, Options: "", Args: "1"},
 		{Type: token.BACKSPACE, Options: "0.1s", Args: "5"},
@@ -49,6 +56,9 @@ Sleep 3`
 		{Type: token.ALT, Options: "", Args: "."},
 		{Type: token.SLEEP, Args: "100ms"},
 		{Type: token.SLEEP, Args: "3s"},
+		{Type: token.WAIT, Args: "Line"},
+		{Type: token.WAIT, Args: "Screen"},
+		{Type: token.WAIT, Options: "100ms", Args: "Line foobar"},
 	}
 
 	l := lexer.New(input)
@@ -57,7 +67,7 @@ Sleep 3`
 	cmds := p.Parse()
 
 	if len(cmds) != len(expected) {
-		t.Fatalf("Expected %d commands, got %d", len(expected), len(cmds))
+		t.Fatalf("Expected %d commands, got %d; %v", len(expected), len(cmds), cmds)
 	}
 
 	for i, cmd := range cmds {
@@ -160,9 +170,9 @@ func TestParseTapeFile(t *testing.T) {
 		{Type: token.DOWN, Options: "", Args: "1"},
 		{Type: token.DOWN, Options: "", Args: "2"},
 		{Type: token.DOWN, Options: "1s", Args: "3"},
-		{Type: token.PAGEDOWN, Options: "", Args: "1"},
-		{Type: token.PAGEDOWN, Options: "", Args: "2"},
-		{Type: token.PAGEDOWN, Options: "1s", Args: "3"},
+		{Type: token.PAGE_DOWN, Options: "", Args: "1"},
+		{Type: token.PAGE_DOWN, Options: "", Args: "2"},
+		{Type: token.PAGE_DOWN, Options: "1s", Args: "3"},
 		{Type: token.ENTER, Options: "", Args: "1"},
 		{Type: token.ENTER, Options: "", Args: "2"},
 		{Type: token.ENTER, Options: "1s", Args: "3"},
@@ -181,9 +191,9 @@ func TestParseTapeFile(t *testing.T) {
 		{Type: token.UP, Options: "", Args: "1"},
 		{Type: token.UP, Options: "", Args: "2"},
 		{Type: token.UP, Options: "1s", Args: "3"},
-		{Type: token.PAGEUP, Options: "", Args: "1"},
-		{Type: token.PAGEUP, Options: "", Args: "2"},
-		{Type: token.PAGEUP, Options: "1s", Args: "3"},
+		{Type: token.PAGE_UP, Options: "", Args: "1"},
+		{Type: token.PAGE_UP, Options: "", Args: "2"},
+		{Type: token.PAGE_UP, Options: "1s", Args: "3"},
 		{Type: token.DOWN, Options: "", Args: "1"},
 		{Type: token.DOWN, Options: "", Args: "2"},
 		{Type: token.DOWN, Options: "1s", Args: "3"},
@@ -302,7 +312,7 @@ func (st *parseSourceTest) run(t *testing.T) {
 	if st.writeFile {
 		err := os.WriteFile("source.tape", []byte(st.srcTape), os.ModePerm)
 		if err != nil {
-			t.Fatalf(err.Error())
+			t.Fatal(err)
 		}
 	}
 

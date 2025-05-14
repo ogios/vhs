@@ -27,6 +27,7 @@ type KeyStrokeEvents struct {
 	startTime      time.Time
 	duration       time.Duration
 	maxDisplaySize int
+	fontFamily     string
 }
 
 const (
@@ -215,15 +216,15 @@ type Keyboard struct {
 }
 
 // Press is a wrapper around the rod.Keyboard#Press method.
-func (k *Keyboard) Press(key input.Key) {
+func (k *Keyboard) Press(key input.Key) error {
 	k.KeyStrokeEvents.Push(keyToDisplay(key))
-	k.Keyboard.Press(key)
+	return k.Keyboard.Press(key)
 }
 
 // Type is a wrapper around the rod.Keyboard#Type method.
-func (k *Keyboard) Type(key input.Key) {
+func (k *Keyboard) Type(key input.Key) error {
 	k.KeyStrokeEvents.Push(keyToDisplay(key))
-	k.Keyboard.Type(key)
+	return k.Keyboard.Type(key)
 }
 
 // Input is a wrapper around the rod.Page#MustElement("textarea")#Input method.

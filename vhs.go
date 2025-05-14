@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -46,6 +47,8 @@ type Options struct {
 	Test          TestOptions
 	Video         VideoOptions
 	LoopOffset    float64
+	WaitTimeout   time.Duration
+	WaitPattern   *regexp.Regexp
 	CursorBlink   bool
 	Screenshot    ScreenshotOptions
 	Style         StyleOptions
@@ -58,7 +61,10 @@ const (
 	defaultLetterSpacing = 1.0
 	fontsSeparator       = ","
 	defaultCursorBlink   = true
+	defaultWaitTimeout   = 15 * time.Second
 )
+
+var defaultWaitPattern = regexp.MustCompile(">$")
 
 var defaultFontFamily = withSymbolsFallback(strings.Join([]string{
 	"JetBrains Mono",
@@ -99,6 +105,8 @@ func DefaultVHSOptions() Options {
 		CursorBlink:   defaultCursorBlink,
 		Video:         video,
 		Screenshot:    screenshot,
+		WaitTimeout:   defaultWaitTimeout,
+		WaitPattern:   defaultWaitPattern,
 	}
 }
 
@@ -165,9 +173,6 @@ func (vhs *VHS) Setup() {
 	height := vhs.Options.Video.Style.Height - double(padding) - double(margin) - bar
 	vhs.Page = vhs.Page.MustSetViewport(width, height, 0, false)
 
-	// Let's wait until we can access the window.term variable.
-	vhs.Page = vhs.Page.MustWait("() => window.term != undefined")
-
 	// Find xterm.js canvases for the text and cursor layer for recording.
 	vhs.TextCanvas, _ = vhs.Page.Element("canvas.xterm-text-layer")
 	vhs.CursorCanvas, _ = vhs.Page.Element("canvas.xterm-cursor-layer")
@@ -189,6 +194,8 @@ const cleanupWaitTime = 100 * time.Millisecond
 
 // Terminate cleans up a VHS instance and terminates the go-rod browser and ttyd
 // processes.
+//
+//nolint:wrapcheck
 func (vhs *VHS) terminate() error {
 	// Signal the end of all keystroke events.
 	vhs.Page.KeyStrokeEvents.End()
@@ -204,6 +211,8 @@ func (vhs *VHS) terminate() error {
 }
 
 // Cleanup individual frames.
+//
+//nolint:wrapcheck
 func (vhs *VHS) Cleanup() error {
 	err := os.RemoveAll(vhs.Options.Video.Input)
 	if err != nil {
@@ -219,6 +228,7 @@ func (vhs *VHS) Render() error {
 		return err
 	}
 
+	vhs.Options.Video.KeyStrokeOverlay.FontFamily = vhs.Page.KeyStrokeEvents.fontFamily
 	vhs.Options.Video.KeyStrokeOverlay.Events = vhs.Page.KeyStrokeEvents.events
 	vhs.Options.Video.KeyStrokeOverlay.Duration = vhs.Page.KeyStrokeEvents.duration
 
@@ -242,7 +252,7 @@ func (vhs *VHS) Render() error {
 	return nil
 }
 
-// ApplyLoopOffset by modifying frame sequence
+// ApplyLoopOffset by modifying frame sequence.
 func (vhs *VHS) ApplyLoopOffset() error {
 	if vhs.totalFrames <= 0 {
 		return errors.New("no frames")
@@ -320,6 +330,7 @@ func (vhs *VHS) Record(ctx context.Context) <-chan error {
 	ch := make(chan error)
 	interval := time.Second / time.Duration(vhs.Options.Video.Framerate)
 
+	//nolint: mnd
 	go func() {
 		counter := 0
 		ticker := time.NewTicker(interval)
@@ -355,7 +366,7 @@ func (vhs *VHS) Record(ctx context.Context) <-chan error {
 				if err := os.WriteFile(
 					filepath.Join(vhs.Options.Video.Input, fmt.Sprintf(cursorFrameFormat, counter)),
 					cursor,
-					os.ModePerm,
+					0o600,
 				); err != nil {
 					ch <- fmt.Errorf("error writing cursor frame: %w", err)
 					continue
@@ -363,7 +374,7 @@ func (vhs *VHS) Record(ctx context.Context) <-chan error {
 				if err := os.WriteFile(
 					filepath.Join(vhs.Options.Video.Input, fmt.Sprintf(textFrameFormat, counter)),
 					text,
-					os.ModePerm,
+					0o600,
 				); err != nil {
 					ch <- fmt.Errorf("error writing text frame: %w", err)
 					continue

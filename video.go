@@ -54,6 +54,7 @@ type KeyStrokeOptions struct {
 	Color       string
 	TypingSpeed time.Duration
 	Duration    time.Duration
+	FontFamily  string
 }
 
 // VideoOptions is the set of options for converting frames to a GIF.
@@ -104,7 +105,7 @@ func ensureDir(output string) {
 	}
 }
 
-// buildFFopts assembles an ffmpeg command from some VideoOptions
+// buildFFopts assembles an ffmpeg command from some VideoOptions.
 func buildFFopts(opts VideoOptions, targetFile string) []string {
 	var args []string
 	streamCounter := 2
@@ -157,11 +158,7 @@ func buildFFopts(opts VideoOptions, targetFile string) []string {
 
 // MakeGIF takes a list of images (as frames) and converts them to a GIF.
 func MakeGIF(opts VideoOptions) *exec.Cmd {
-	targetFile := opts.Output.GIF
-
-	if opts.Output.GIF == "" && opts.Output.WebM == "" && opts.Output.MP4 == "" {
-		targetFile = "out.gif"
-	} else if opts.Output.GIF == "" {
+	if opts.Output.GIF == "" {
 		return nil
 	}
 
@@ -171,7 +168,7 @@ func MakeGIF(opts VideoOptions) *exec.Cmd {
 	//nolint:gosec
 	return exec.Command(
 		"ffmpeg",
-		buildFFopts(opts, targetFile)...,
+		buildFFopts(opts, opts.Output.GIF)...,
 	)
 }
 
